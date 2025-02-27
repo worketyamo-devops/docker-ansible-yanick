@@ -1,0 +1,46 @@
+---
+# tasks file for docker
+# installation de docker
+  - name: Installation de Docker et Docker Compose
+    hosts: localhost
+    become: yes
+    tasks:
+      - name: Installer les dépendances
+        apt:
+          name:
+            - apt-transport-https
+            - ca-certificates
+            - curl
+            - gnupg
+            - lsb-release
+          state: present
+      
+      - name: Ajouter la clé GPG de Docker
+        shell: "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg"
+      
+      - name: Ajouter le dépôt officiel Docker
+        shell: "echo \"deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null"
+      
+      
+      
+      - name: Installer Docker Engine et Docker Compose
+        apt:
+          name:
+            - docker-ce
+            - docker-ce-cli
+            - containerd.io
+            - docker-compose-plugin
+          state: present
+      
+      - name: Vérifier l'installation de Docker
+        shell: "docker --version"
+        register: docker_version
+      
+      - debug:
+          msg: "{{ docker_version.stdout }}"
+      
+      - name: Activer et démarrer Docker
+        systemd:
+          name: docker
+          enabled: yes
+          state: started

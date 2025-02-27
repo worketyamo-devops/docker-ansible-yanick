@@ -1,0 +1,39 @@
+---
+# tasks file for user
+
+  # configuration de l'utilisateur
+  - name: Création du groupe et des utilisateurs
+    hosts: localhost
+    become: yes
+    tasks:
+      - name: Créer le groupe docker_users
+        group:
+          name: docker_users
+          state: present
+      
+      - name: Créer les utilisateurs et les ajouter au groupe
+        user:
+          name: "{{ item }}"
+          groups: docker_users
+          append: yes
+          create_home: yes
+        loop:
+          - user1
+          - user2
+      
+      - name: Ajouter le groupe docker_users au groupe docker
+        user:
+          name: "{{ item }}"
+          groups: docker
+          append: yes
+        loop:
+          - user1
+          - user2
+      
+      - name: Vérifier si les utilisateurs peuvent exécuter Docker
+        shell: "sudo -u user1 docker ps"
+        register: docker_ps_output
+        ignore_errors: yes
+      
+      - debug:
+          msg: "{{ docker_ps_output.stdout }}"

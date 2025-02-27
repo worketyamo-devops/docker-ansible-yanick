@@ -1,0 +1,17 @@
+---
+# tasks file for network
+ # Rôle : network_info
+  - name: Récupération des interfaces réseau
+    hosts: localhost
+    become: yes
+    tasks:
+      - name: Obtenir les informations réseau
+        command: ip -j route
+        register: network_info
+      
+      - name: Extraire les interfaces et passerelles
+        set_fact:
+          network_data: "{{ network_info.stdout | from_json | map(attribute='dev') | unique | list }}"
+      
+      - debug:
+          msg: "{{ network_data }}"

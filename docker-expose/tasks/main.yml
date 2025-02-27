@@ -1,0 +1,31 @@
+---
+# tasks file for docker-expose
+  
+  # Rôle : expose_docker_http
+  - name: Exposition de Docker en HTTP
+    hosts: localhost
+    become: yes
+    tasks:
+      - name: Modifier le fichier daemon.json
+        copy:
+          dest: /etc/docker/daemon.json
+          content: |
+            {
+              "hosts": ["tcp://0.0.0.0:2375", "unix:///var/run/docker.sock"]
+            }
+        notify: Restart Docker
+      
+      - name: Ajouter une règle firewall pour autoriser le port 2375
+        ufw:
+          rule: allow
+          port: "2375"
+          proto: tcp
+      
+      - name: Vérifier l'exposition de Docker
+        shell: "curl http://127.0.0.1:2375/info"
+        register: docker_http_info
+      
+      - debug:
+          msg: "{{ docker_http_info.stdout }}"
+      
+   
