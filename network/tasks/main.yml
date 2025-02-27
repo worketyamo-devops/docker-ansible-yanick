@@ -1,10 +1,7 @@
 ---
-# tasks file for network
+
  # Rôle : network_info
-  - name: Récupération des interfaces réseau
-    hosts: localhost
-    become: yes
-    tasks:
+
       - name: Obtenir les informations réseau
         command: ip -j route
         register: network_info

@@ -1,11 +1,6 @@
 ---
-# tasks file for user
-
   # configuration de l'utilisateur
-  - name: Création du groupe et des utilisateurs
-    hosts: localhost
-    become: yes
-    tasks:
+ 
       - name: Créer le groupe docker_users
         group:
           name: docker_users

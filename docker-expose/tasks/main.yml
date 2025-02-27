@@ -1,11 +1,8 @@
 ---
-# tasks file for docker-expose
+
   
-  # Rôle : expose_docker_http
-  - name: Exposition de Docker en HTTP
-    hosts: localhost
-    become: yes
-    tasks:
+  #  expose_docker_http
+  
       - name: Modifier le fichier daemon.json
         copy:
           dest: /etc/docker/daemon.json

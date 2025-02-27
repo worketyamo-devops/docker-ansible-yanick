@@ -1,10 +1,7 @@
 ---
-# tasks file for docker
+
 # installation de docker
-  - name: Installation de Docker et Docker Compose
-    hosts: localhost
-    become: yes
-    tasks:
+
       - name: Installer les dépendances
         apt:
           name:

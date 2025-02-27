@@ -1,6 +1,5 @@
 ---
 # handlers file for docker-expose
- handlers:
       - name: Restart Docker
         systemd:
           name: docker
