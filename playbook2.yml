@@ -1,0 +1,140 @@
+---
+  - name: Déploiement de Docker et configuration du système
+    hosts: localhost
+    become: yes
+    # roles:
+    #   - docker_installation
+    #   - user_configuration
+    #   - network_info
+    #   - expose_docker_http
+  
+  # installation de docker
+  - name: Installation de Docker et Docker Compose
+    hosts: localhost
+    become: yes
+    tasks:
+      - name: Installer les dépendances
+        apt:
+          name:
+            - apt-transport-https
+            - ca-certificates
+            - curl
+            - gnupg
+            - lsb-release
+          state: present
+      
+      - name: Ajouter la clé GPG de Docker
+        shell: "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg"
+      
+      - name: Ajouter le dépôt officiel Docker
+        shell: "echo \"deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null"
+      
+      
+      
+      - name: Installer Docker Engine et Docker Compose
+        apt:
+          name:
+            - docker-ce
+            - docker-ce-cli
+            - containerd.io
+            - docker-compose-plugin
+          state: present
+      
+      - name: Vérifier l'installation de Docker
+        shell: "docker --version"
+        register: docker_version
+      
+      - debug:
+          msg: "{{ docker_version.stdout }}"
+      
+      - name: Activer et démarrer Docker
+        systemd:
+          name: docker
+          enabled: yes
+          state: started
+  
+  # configuration de l'utilisateur
+  - name: Création du groupe et des utilisateurs
+    hosts: localhost
+    become: yes
+    tasks:
+      - name: Créer le groupe docker_users
+        group:
+          name: docker_users
+          state: present
+      
+      - name: Créer les utilisateurs et les ajouter au groupe
+        user:
+          name: "{{ item }}"
+          groups: docker_users
+          append: yes
+          create_home: yes
+        loop:
+          - user1
+          - user2
+      
+      - name: Ajouter le groupe docker_users au groupe docker
+        user:
+          name: "{{ item }}"
+          groups: docker
+          append: yes
+        loop:
+          - user1
+          - user2
+      
+      - name: Vérifier si les utilisateurs peuvent exécuter Docker
+        shell: "sudo -u user1 docker ps"
+        register: docker_ps_output
+        ignore_errors: yes
+      
+      - debug:
+          msg: "{{ docker_ps_output.stdout }}"
+  
+  # Rôle : network_info
+  - name: Récupération des interfaces réseau
+    hosts: localhost
+    become: yes
+    tasks:
+      - name: Obtenir les informations réseau
+        command: ip -j route
+        register: network_info
+      
+      - name: Extraire les interfaces et passerelles
+        set_fact:
+          network_data: "{{ network_info.stdout | from_json | map(attribute='dev') | unique | list }}"
+      
+      - debug:
+          msg: "{{ network_data }}"
+  
+  # Rôle : expose_docker_http
+  - name: Exposition de Docker en HTTP
+    hosts: localhost
+    become: yes
+    tasks:
+      - name: Modifier le fichier daemon.json
+        copy:
+          dest: /etc/docker/daemon.json
+          content: |
+            {
+              "hosts": ["tcp://0.0.0.0:2375", "unix:///var/run/docker.sock"]
+            }
+        notify: Restart Docker
+      
+      - name: Ajouter une règle firewall pour autoriser le port 2375
+        ufw:
+          rule: allow
+          port: "2375"
+          proto: tcp
+      
+      - name: Vérifier l'exposition de Docker
+        shell: "curl http://127.0.0.1:2375/info"
+        register: docker_http_info
+      
+      - debug:
+          msg: "{{ docker_http_info.stdout }}"
+      
+    handlers:
+      - name: Restart Docker
+        systemd:
+          name: docker
+          state: restarted

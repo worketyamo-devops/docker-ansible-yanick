@@ -1,0 +1,24 @@
+---
+- name: Installer et démarrer Nginx
+  hosts: all
+  become: yes 
+
+  tasks:
+    - name: update all package
+      ansible.builtin.apt:
+        update_cache: true
+        upgrade: dist
+
+    - name: Install Docker
+      ansible.builtin.apt:
+        name: docker
+        state: present
+    - name: Start Docker Service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+    - name: Pull HTTPD Server Image
+      docker_image:
+        name: httpd
+        state: present
